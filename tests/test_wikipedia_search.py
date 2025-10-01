@@ -22,7 +22,14 @@ def test_sidebar_exists(page):
 
     article = WikipediaArticlePage(page)
     article.expect_loaded()
-    assert article.sidebar.is_visible(), "Sidebar navigation should be visible"
+
+    # If the sidebar is collapsed, open the "Main menu" first
+    if not article.sidebar.is_visible():
+        menu_button = page.get_by_role("button", name="Main menu")
+        if menu_button.is_visible():
+            menu_button.click()
+
+    expect(article.sidebar).to_be_visible()
 
 # 3) Refine search changes article
 def test_refine_search(page):
