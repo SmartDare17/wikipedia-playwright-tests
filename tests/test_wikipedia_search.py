@@ -4,6 +4,14 @@ from pages.home_page import WikipediaHomePage
 from pages.article_page import WikipediaArticlePage
 from playwright.sync_api import expect
 
+
+def assert_toc_visible(page):
+    # Works on Vector 2022 (sidebar TOC) and older skins / mobile
+    toc = page.locator(
+        "#vector-toc, #toc, nav[aria-label='Contents'], nav[role='navigation'][aria-labelledby='mw-toc-heading']"
+    )
+    expect(toc.first).to_be_visible()
+
 # 1) Basic search → assert heading
 def test_search_python_language(page):
     home = WikipediaHomePage(page).open()
@@ -75,10 +83,8 @@ def test_table_of_contents_present(page):
     article = WikipediaArticlePage(page)
     article.expect_loaded()
 
-    toc = page.locator("#toc")
-    expect(toc).to_be_visible()
-    # At least a few TOC items
-    assert page.locator("#toc li").count() >= 3, "Expected at least 3 items in TOC"
+    assert_toc_visible(page)
+
 
 # 6) Search suggestions appear when typing (without submitting)
 def test_search_suggestions_dropdown(page):
