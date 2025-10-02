@@ -1,4 +1,4 @@
-
+import re
 from urllib.parse import urlparse
 from pages.home_page import WikipediaHomePage
 from pages.article_page import WikipediaArticlePage
@@ -58,13 +58,14 @@ def test_refine_search(page):
 # 4) Language switch from home (Español)
 def test_language_switch_to_spanish(page):
     home = WikipediaHomePage(page).open()
-    # Click Español language tile
     page.get_by_role("link", name="Español").click()
-    # Assert URL contains /es/
-    expect(page).to_have_url(lambda url: "/es/" in url)
-    # Main page heading in Spanish should be visible
-    main_heading = page.locator("#firstHeading")
-    expect(main_heading).to_be_visible()
+
+    # Assert we navigated to the Spanish subdomain
+    expect(page).to_have_url(re.compile(r"^https://es\.wikipedia\.org/"))
+
+    # Extra assertion: page language should be Spanish
+    lang = page.locator("html").get_attribute("lang") or ""
+    assert lang.startswith("es"), f"Expected html lang to start with 'es', got '{lang}'"
 
 # 5) Table of contents is present on longer articles
 def test_table_of_contents_present(page):
