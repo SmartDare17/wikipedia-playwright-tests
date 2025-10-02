@@ -147,13 +147,18 @@ def test_infobox_present(page):
 def test_first_paragraph_has_text(page):
     home = WikipediaHomePage(page).open()
     home.search("Software testing")
+
     article = WikipediaArticlePage(page)
     article.expect_loaded()
+    page.wait_for_load_state("networkidle")
 
-    first_paragraph = page.locator("div.mw-parser-output > p").first
-    expect(first_paragraph).to_be_visible()
-    text = first_paragraph.text_content() or ""
-    assert len(text.strip()) > 0, "Expected first paragraph to contain text"
+    # Skip placeholder paragraphs and require actual text content
+    first_paragraph = page.locator(
+        "div.mw-parser-output > p:not(.mw-empty-elt)"
+    ).filter(has_text=re.compile(r"\S")).first
+
+    expect(first_paragraph).to_be_visible(timeout=10000)
+    expect(first_paragraph).to_contain_text(re.compile(r"\w{3,}"))
 
 # 10) Confirm canonical article URL contains slug
 def test_article_url_contains_slug(page):
