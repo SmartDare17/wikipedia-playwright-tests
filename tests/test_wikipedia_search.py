@@ -88,7 +88,6 @@ def test_table_of_contents_present(page):
 
 # 6) Search suggestions appear when typing (without submitting)
 # tests/test_wikipedia_search.py
-from playwright.sync_api import expect
 
 def test_search_suggestions_dropdown(page):
     home = WikipediaHomePage(page).open()
@@ -123,17 +122,16 @@ def test_internal_link_navigation(page):
     article = WikipediaArticlePage(page)
     article.expect_loaded()
 
-    # Try to click the Guido van Rossum link if present
-    link = page.get_by_role("link", name=lambda n: n and "Guido van Rossum" in n)
-    if link.count() == 0:
-        # Fallback: click first link in infobox
-        link = page.locator(".infobox a").first()
-    old_heading = article.get_heading_text()
-    link.first.click()
+    # Find a link whose accessible name contains "Guido van Rossum"
+    link = page.get_by_role("link", name=re.compile(r"\bGuido van Rossum\b", re.I)).first
+    expect(link).to_be_visible(timeout=10000)
 
-    article.expect_loaded()
-    new_heading = article.get_heading_text()
-    assert new_heading and new_heading != old_heading, "Heading should change after internal navigation"
+    with page.expect_navigation():
+        link.click()
+
+    # Assert we actually navigated to Guido’s page
+    expect(page).to_have_url(re.compile(r"/Guido_van_Rossum", re.I))
+    expect(page.get_by_role("heading", name=re.compile(r"Guido van Rossum", re.I))).to_be_visible()
 
 # 8) Infobox exists on Python article
 def test_infobox_present(page):
