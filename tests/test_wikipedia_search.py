@@ -87,13 +87,33 @@ def test_table_of_contents_present(page):
 
 
 # 6) Search suggestions appear when typing (without submitting)
+# tests/test_wikipedia_search.py
+from playwright.sync_api import expect
+
 def test_search_suggestions_dropdown(page):
     home = WikipediaHomePage(page).open()
+
     search_box = page.locator("input[name='search']")
-    search_box.fill("Selenium")
-    # Wikipedia suggestions container is 'div.suggestions' with links inside
-    suggestions = page.locator("div.suggestions")
-    expect(suggestions).to_be_visible()
+    # Type with a slight delay so autosuggest has time to fetch
+    search_box.click()
+    search_box.fill("")  # ensure empty
+    search_box.type("Selenium", delay=75)
+
+    # Support old and new widgets:
+    # - Codex: div.cdx-menu[role='listbox'] with options inside
+    # - Legacy: .suggestions or .suggestions-dropdown containers
+    suggestions = page.locator(
+        "div.cdx-menu[role='listbox'], .suggestions-dropdown, div.suggestions, div.suggestions-results"
+    )
+
+    # Wait for at least one to appear & be visible
+    expect(suggestions.first).to_be_visible(timeout=10000)
+
+    # (Optional) also assert it actually contains items
+    items = page.locator(
+        "div.cdx-menu [role='option'], .suggestions-dropdown a, div.suggestions a, div.suggestions-results a"
+    )
+    expect(items.first).to_be_visible()
 
 # 7) Internal navigation: click link from Python article to Guido van Rossum
 def test_internal_link_navigation(page):
